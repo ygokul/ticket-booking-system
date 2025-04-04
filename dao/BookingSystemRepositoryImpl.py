@@ -114,6 +114,107 @@ class BookingSystemRepositoryImpl(IBookingSystemRepository):
 
         except Exception as e:
             print("❌ Error booking tickets:", e)
+    def update_event_details(self, event_name, new_date=None, new_time=None, new_ticket_price=None):
+        """Update details of an existing event"""
+        try:
+            self.cursor.execute("SELECT * FROM event WHERE event_name = %s", (event_name,))
+            event = self.cursor.fetchone()
+            
+            if not event:
+                raise EventNotFoundException("Event not found!")
+            
+            update_query = "UPDATE event SET "
+            updates = []
+            values = []
+
+            if new_date:
+                updates.append("event_date = %s")
+                values.append(new_date)
+            if new_time:
+                updates.append("event_time = %s")
+                values.append(new_time)
+            if new_ticket_price:
+                updates.append("ticket_price = %s")
+                values.append(new_ticket_price)
+
+            update_query += ", ".join(updates) + " WHERE event_name = %s"
+            values.append(event_name)
+
+            self.cursor.execute(update_query, tuple(values))
+            self.conn.commit()
+            print(f"✅ Event '{event_name}' updated successfully!")
+        
+        except Exception as e:
+            print(f"❌ Error updating event: {e}")
+
+    def get_customer_booking_history(self, customer_name):
+        """Retrieve all bookings made by a specific customer."""
+        try:
+            query = """
+                SELECT b.booking_id, b.num_tickets, b.total_cost, b.booking_date, e.event_name
+                FROM booking b
+                JOIN event e ON b.event_name = e.event_name
+                JOIN customer c ON c.BOOKING_ID = b.booking_id
+                WHERE c.customer_name = %s
+            """
+            self.cursor.execute(query, (customer_name,))
+            bookings = self.cursor.fetchall()
+            
+            if not bookings:
+                print(f"⚠️ No bookings found for customer: {customer_name}")
+                return
+
+            print(f"📜 Booking History for {customer_name}:")
+            print(tabulate(bookings, headers=["Booking ID", "Tickets", "Total Cost", "Date", "Event"], tablefmt="fancy_grid"))
+        
+        except Exception as e:
+            print(f"❌ Error fetching booking history: {e}")
+
+    def list_events_by_type(self, event_type):
+        """Retrieve events based on their type."""
+        try:
+            self.cursor.execute("SELECT event_name, event_date, event_time, venue_name FROM event WHERE event_type = %s", (event_type,))
+            events = self.cursor.fetchall()
+            
+            if not events:
+                print(f"⚠️ No events found under the category: {event_type}")
+                return
+            
+            print(f"🎭 Events categorized as '{event_type}':")
+            print(tabulate(events, headers=["Event Name", "Date", "Time", "Venue"], tablefmt="fancy_grid"))
+        
+        except Exception as e:
+            print(f"❌ Error fetching events: {e}")
+    
+    def get_revenue_by_event(self, event_name):
+        """Calculate total revenue generated from ticket sales for a specific event."""
+        try:
+            query = "SELECT SUM(total_cost) FROM booking WHERE event_name = %s"
+            self.cursor.execute(query, (event_name,))
+            revenue = self.cursor.fetchone()[0]
+            
+            if revenue is None:
+                revenue = 0
+            
+            print(f"💰 Total revenue generated from '{event_name}': ₹{revenue:.2f}")
+        
+        except Exception as e:
+            print(f"❌ Error calculating revenue: {e}")
+
+    def auto_cancel_unpaid_bookings(self):
+        """Automatically cancel bookings that haven't been paid within a set timeframe (e.g., 24 hours)."""
+        try:
+            query = """
+                DELETE FROM booking WHERE payment_status = 'Pending' AND TIMESTAMPDIFF(HOUR, booking_date, NOW()) > 24
+            """
+            self.cursor.execute(query)
+            affected_rows = self.cursor.rowcount
+            self.conn.commit()
+            
+            print(f"🔄 {affected_rows} unpaid bookings were automatically canceled.")
+        
+        except Exception as e:
+            print(f"❌ Error auto-canceling bookings: {e}")
 
     def cancel_booking(self, booking_id):
         # Step 1: Get event_name and num_tickets from booking
