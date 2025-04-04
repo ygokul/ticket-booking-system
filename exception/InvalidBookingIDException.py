@@ -1,0 +1,2 @@
+class InvalidBookingIDException(Exception):
+    pass
