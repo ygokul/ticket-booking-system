@@ -62,3 +62,32 @@ class BookingSystemServiceProviderImpl(EventServiceProviderImpl, IBookingSystemS
                     'customers': [str(customer) for customer in booking.customers]
                 }
         raise InvalidBookingIDException(f"Booking ID {booking_id} not found")
+    
+    def book_tickets(self, event_name: str, num_tickets: int, customers: List[Customer], ticket_category: str) -> bool:
+        event = None
+        for e in self.events:
+            if e.event_name == event_name:
+                event = e
+                break
+        
+        if not event:
+            raise EventNotFoundException(f"Event '{event_name}' not found")
+        
+        try:
+            total_cost = event.calculate_ticket_cost(ticket_category, num_tickets)
+        except ValueError as e:
+            print(f"Error: {e}")
+            return False
+        
+        if event.available_seats < num_tickets:
+            print(f"Tickets unavailable. Only {event.available_seats} tickets remaining.")
+            return False
+        
+        if len(customers) != num_tickets:
+            return False
+        
+        event.book_tickets(num_tickets)
+        booking = Booking(customers, event, num_tickets, total_cost)
+        self.bookings.append(booking)
+        print(f"Booking successful! Total cost: ₹{total_cost:.2f}")
+        return True

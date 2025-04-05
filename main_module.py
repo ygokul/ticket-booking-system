@@ -60,6 +60,19 @@ def main():
                     print("Number of tickets must be positive")
                     continue
                 
+                print("\nAvailable ticket categories:")
+                print("1. Silver (1x base price)")
+                print("2. Gold (1.5x base price)")
+                print("3. Diamond (2x base price)")
+                category_choice = input("Select category (1-3): ")
+                
+                category_map = {'1': 'Silver', '2': 'Gold', '3': 'Diamond'}
+                ticket_category = category_map.get(category_choice)
+                
+                if not ticket_category:
+                    print("Invalid category selection")
+                    continue
+                
                 customers = []
                 for i in range(num_tickets):
                     print(f"\nEnter details for ticket {i+1}:")
@@ -68,16 +81,20 @@ def main():
                     phone = input("Phone number: ")
                     customers.append(Customer(name, email, phone))
                 
-                if booking_system.book_tickets(event_name, num_tickets, customers):
-                    print(f"Successfully booked {num_tickets} tickets for {event_name}")
-                else:
-                    print("Failed to book tickets. Not enough seats available.")
-            
+                try:
+                    if booking_system.book_tickets(event_name, num_tickets, customers, ticket_category):
+                        print(f"Successfully booked {num_tickets} {ticket_category} tickets for {event_name}")
+                    else:
+                        print("Failed to book tickets.")
+                except EventNotFoundException as e:
+                    print(f"Error: {e}")
+                except ValueError as e:
+                    print(f"Error: {e}")
+                    
             except ValueError:
-                print("Invalid input. Please enter a valid number.")
-            except EventNotFoundException as e:
-                print(f"Error: {e}")
-        
+                print("Invalid input. Please enter a valid number for tickets.")
+            except Exception as e:
+                print(f"An unexpected error occurred: {e}")        
         elif choice == "3":
             try:
                 booking_id = int(input("Enter booking ID to cancel: "))

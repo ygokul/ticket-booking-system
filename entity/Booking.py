@@ -1,17 +1,19 @@
 from datetime import datetime
 from entity.customer import Customer
 from entity.event import Event
+from typing import List
+
 
 class Booking:
     booking_counter = 1
 
-    def __init__(self, customers: list[Customer], event: Event, num_tickets: int):
+    def __init__(self, customers: List[Customer], event: Event, num_tickets: int, total_cost: float):
         self.booking_id = Booking.booking_counter
         Booking.booking_counter += 1
         self.customers = customers
         self.event = event
         self.num_tickets = num_tickets
-        self.total_cost = num_tickets * event.ticket_price
+        self.total_cost = total_cost
         self.booking_date = datetime.now()
 
     def display_booking_details(self) -> None:
@@ -30,3 +32,5 @@ class Booking:
                 f"Event: {self.event.event_name}, "
                 f"Tickets: {self.num_tickets}, "
                 f"Total Cost: {self.total_cost}")
+    def calculate_booking_cost(self, num_tickets: int) -> float:
+        return self.event.ticket_price * num_tickets
