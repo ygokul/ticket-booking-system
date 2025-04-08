@@ -135,16 +135,15 @@ def handle_customer_booking(conn):
                 cursor.execute("""
                     SELECT event_id, event_name, event_date, event_time, available_seats 
                     FROM Event 
-                    WHERE event_type = %s AND available_seats > 0
-                    ORDER BY event_date
-                """, (event_type,))
+                    WHERE event_type = %s
+                """, (selected_event_type,))
                 events = cursor.fetchall()
 
             if not events:
-                print(f"\n❌ No available {event_type} events found!")
+                print(f"\n❌ No available {selected_event_type} events found!")
                 continue
 
-            print(f"\n🎟 Available {event_type} Events:")
+            print(f"\n🎟 Available {selected_event_type} Events:")
             for idx, event in enumerate(events, 1):
                 print(f"{idx}. {event[1]} (ID: {event[0]})")
                 print(f"   📅 Date: {event[2]} ⏰ Time: {event[3]}")
